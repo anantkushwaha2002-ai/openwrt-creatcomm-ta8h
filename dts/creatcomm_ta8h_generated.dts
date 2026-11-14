@@ -1,0 +1,431 @@
+/dts-v1/;
+// version: 17
+// last_comp_version: 16
+// boot_cpuid_phys: 0x0
+
+/ {
+    #address-cells = <0x1>;
+    #size-cells = <0x1>;
+    compatible = "creatcomm,ta8h", "qca,qca9558";
+    model = "CreatComm Technology TA8H";
+    interrupt-controller {
+        compatible = "qca,ar7100-cpu-intc";
+        interrupt-controller;
+        #interrupt-cells = <0x1>;
+        phandle = <0x1>;
+    };
+    ahb {
+        compatible = "simple-bus";
+        ranges;
+        #address-cells = <0x1>;
+        #size-cells = <0x1>;
+        interrupt-parent = <0x1>;
+        apb {
+            compatible = "simple-bus";
+            ranges;
+            #address-cells = <0x1>;
+            #size-cells = <0x1>;
+            interrupt-parent = <0x2>;
+            interrupt-controller@18060010 {
+                compatible = "qca,ar7240-misc-intc";
+                reg = <0x18060010 0x4>;
+                interrupt-parent = <0x1>;
+                interrupts = <0x6>;
+                interrupt-controller;
+                #interrupt-cells = <0x1>;
+                phandle = <0x2>;
+            };
+            memory-controller@18000000 {
+                compatible = "qca,qca9550-ddr-controller", "qca,ar7240-ddr-controller";
+                reg = <0x18000000 0x100>;
+                #qca,ddr-wb-channel-cells = <0x1>;
+            };
+            uart@18020000 {
+                compatible = "ns16550a";
+                reg = <0x18020000 0x20>;
+                interrupts = <0x3>;
+                clocks = <0x3 0x3>;
+                clock-names = "uart";
+                reg-io-width = <0x4>;
+                reg-shift = <0x2>;
+                no-loopback-test;
+            };
+            usb-phy0@18030000 {
+                compatible = "qca,qca9550-usb-phy", "qca,ar7200-usb-phy";
+                reg = <0x18030000 0x4 0x18030004 0x4>;
+                reset-names = "usb-phy", "usb-suspend-override";
+                resets = <0x4 0x4 0x4 0x3>;
+                #phy-cells = <0x0>;
+                status = "okay";
+                phandle = <0x12>;
+            };
+            usb-phy1@18030010 {
+                compatible = "qca,qca9550-usb-phy", "qca,ar7200-usb-phy";
+                reg = <0x18030010 0x4 0x18030014 0x4>;
+                reset-names = "usb-phy", "usb-suspend-override";
+                resets = <0x5 0x4 0x5 0x3>;
+                #phy-cells = <0x0>;
+                status = "okay";
+                phandle = <0x13>;
+            };
+            gpio@18040000 {
+                compatible = "qca,qca9550-gpio", "qca,ar9340-gpio";
+                reg = <0x18040000 0x28>;
+                interrupts = <0x2>;
+                ngpios = <0x18>;
+                gpio-controller;
+                #gpio-cells = <0x2>;
+                interrupt-controller;
+                #interrupt-cells = <0x2>;
+                phandle = <0x14>;
+            };
+            pinmux@1804002c {
+                compatible = "pinctrl-single";
+                reg = <0x1804002C 0x44>;
+                #size-cells = <0x0>;
+                pinctrl-single,bit-per-mux;
+                pinctrl-single,register-width = <0x20>;
+                pinctrl-single,function-mask = <0x1>;
+                #pinctrl-cells = <0x2>;
+                pinmux_jtag_disable_pins {
+                    pinctrl-single,bits = <0x40 0x2 0x2>;
+                };
+            };
+            pll-controller@18050000 {
+                compatible = "qca,qca9550-pll", "syscon";
+                reg = <0x18050000 0x50>;
+                #clock-cells = <0x1>;
+                clock-output-names = "cpu", "ddr", "ahb";
+                clocks = <0x6>;
+                clock-names = "ref";
+                phandle = <0x3>;
+            };
+            wdt@18060008 {
+                compatible = "qca,ar7130-wdt";
+                reg = <0x18060008 0x8>;
+                interrupts = <0x4>;
+                clocks = <0x3 0x2>;
+                clock-names = "wdt";
+            };
+            reset-controller@1806001c {
+                compatible = "qca,qca9550-reset", "qca,ar7100-reset";
+                reg = <0x1806001C 0x4>;
+                #reset-cells = <0x1>;
+                interrupt-parent = <0x1>;
+                phandle = <0x4>;
+                interrupt-controller2 {
+                    compatible = "qca,ar9340-intc";
+                    interrupt-parent = <0x1>;
+                    interrupts = <0x2>;
+                    interrupt-controller;
+                    #interrupt-cells = <0x1>;
+                    qca,int-status-addr = <0xAC>;
+                    qca,pending-bits = <0xF 0x1F0>;
+                    phandle = <0xC>;
+                };
+                interrupt-controller3 {
+                    compatible = "qca,ar9340-intc";
+                    interrupt-parent = <0x1>;
+                    interrupts = <0x3>;
+                    interrupt-controller;
+                    #interrupt-cells = <0x1>;
+                    qca,int-status-addr = <0xAC>;
+                    qca,pending-bits = <0x1F000 0x1000000 0x10000000>;
+                    phandle = <0xF>;
+                };
+            };
+            reset-controller@180600c0 {
+                compatible = "qca,qca9550-reset", "qca,ar7100-reset", "simple-bus";
+                reg = <0x180600C0 0x4>;
+                #reset-cells = <0x1>;
+                phandle = <0x5>;
+            };
+        };
+        eth@19000000 {
+            status = "okay";
+            compatible = "qca,qca9550-eth", "syscon";
+            reg = <0x19000000 0x200>;
+            interrupts = <0x4>;
+            phy-mode = "rgmii";
+            pll-reg = <0x0 0x28 0x0>;
+            pll-handle = <0x3>;
+            pll-data = <0x56000000 0x101 0x1616>;
+            resets = <0x4 0x9 0x4 0x16>;
+            reset-names = "mac", "mdio";
+            phy-handle = <0x7>;
+            nvmem-cells = <0x8>;
+            nvmem-cell-names = "mac-address";
+            phandle = <0x9>;
+            mdio {
+                status = "okay";
+                compatible = "qca,ar9340-mdio";
+                #address-cells = <0x1>;
+                #size-cells = <0x0>;
+                regmap = <0x9>;
+                clocks = <0x3 0x4>;
+                clock-names = "ref";
+                ethernet-phy@0 {
+                    reg = <0x0>;
+                    qca,ar8327-initvals = <0x4 0x7600000 0xC 0x80080 0x50 0xCF37CF37 0x54 0xCF37CF37 0x58 0xCF37CF37 0x5C 0x0 0x7C 0x7E 0x94 0x7E>;
+                    phandle = <0x7>;
+                };
+            };
+            gmac-config {
+                device = <0xA>;
+                rgmii-enabled = <0x1>;
+            };
+        };
+        eth@1a000000 {
+            status = "disabled";
+            compatible = "qca,qca9550-eth", "syscon";
+            reg = <0x1A000000 0x200>;
+            interrupts = <0x5>;
+            phy-mode = "sgmii";
+            pll-reg = <0x0 0x48 0x0>;
+            pll-handle = <0x3>;
+            pll-data = <0x3000101 0x101 0x1616>;
+            resets = <0x4 0xD 0x4 0x17>;
+            reset-names = "mac", "mdio";
+            nvmem-cells = <0x17>;
+            nvmem-cell-names = "mac-address";
+            phandle = <0xB>;
+            mdio {
+                status = "disabled";
+                compatible = "qca,ar9340-mdio";
+                #address-cells = <0x1>;
+                #size-cells = <0x0>;
+                regmap = <0xB>;
+                clocks = <0x3 0x4>;
+                clock-names = "ref";
+            };
+            fixed-link {
+                speed = <0x3E8>;
+                full-duplex;
+            };
+        };
+        gmac@18070000 {
+            compatible = "qca,qca9550-gmac";
+            reg = <0x18070000 0x58>;
+            phandle = <0xA>;
+        };
+        pcie-controller@180c0000 {
+            compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
+            #address-cells = <0x3>;
+            #size-cells = <0x2>;
+            bus-range = <0x0 0x0>;
+            reg = <0x180C0000 0x1000 0x180F0000 0x100 0x14000000 0x1000>;
+            reg-names = "crp_base", "ctrl_base", "cfg_base";
+            ranges = <0x2000000 0x0 0x10000000 0x10000000 0x0 0x2000000 0x1000000 0x0 0x0 0x0 0x0 0x1>;
+            interrupt-parent = <0xC>;
+            interrupts = <0x1>;
+            device_type = "pci";
+            resets = <0x4 0x6 0x4 0x7>;
+            reset-names = "hc", "phy";
+            interrupt-controller;
+            #interrupt-cells = <0x1>;
+            interrupt-map-mask = <0x0 0x0 0x0 0x1>;
+            interrupt-map = <0x0 0x0 0x0 0x0 0xD 0x0>;
+            status = "okay";
+            phandle = <0xD>;
+            wifi@0,0 {
+                compatible = "qcom,ath10k";
+                reg = <0x0 0x0 0x0 0x0 0x0>;
+                nvmem-cells = <0x17 0x11>;
+                nvmem-cell-names = "mac-address", "calibration";
+            };
+        };
+        wmac@18100000 {
+            compatible = "qca,qca9550-wmac";
+            reg = <0x18100000 0x10000>;
+            interrupt-parent = <0xC>;
+            interrupts = <0x0>;
+            status = "okay";
+            nvmem-cells = <0x8 0xE>;
+            nvmem-cell-names = "mac-address", "calibration";
+        };
+        pcie-controller@18250000 {
+            compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
+            #address-cells = <0x3>;
+            #size-cells = <0x2>;
+            bus-range = <0x0 0x0>;
+            reg = <0x18250000 0x1000 0x18280000 0x100 0x16000000 0x1000>;
+            reg-names = "crp_base", "ctrl_base", "cfg_base";
+            ranges = <0x2000000 0x0 0x12000000 0x12000000 0x0 0x2000000 0x1000000 0x0 0x0 0x1 0x0 0x1>;
+            interrupt-parent = <0xF>;
+            interrupts = <0x0>;
+            device_type = "pci";
+            resets = <0x5 0x6 0x5 0x7>;
+            reset-names = "hc", "phy";
+            interrupt-controller;
+            #interrupt-cells = <0x1>;
+            interrupt-map-mask = <0x0 0x0 0x0 0x1>;
+            interrupt-map = <0x0 0x0 0x0 0x0 0x10 0x0>;
+            status = "disabled";
+            phandle = <0x10>;
+        };
+        usb@1b000000 {
+            compatible = "generic-ehci";
+            reg = <0x1B000000 0x1FC>;
+            interrupt-parent = <0xF>;
+            interrupts = <0x1>;
+            resets = <0x4 0x5>;
+            reset-names = "usb-host";
+            has-transaction-translator;
+            caps-offset = <0x100>;
+            phy-names = "usb-phy0";
+            phys = <0x12>;
+            status = "okay";
+            #address-cells = <0x1>;
+            #size-cells = <0x0>;
+            port@1 {
+                reg = <0x1>;
+                #trigger-source-cells = <0x0>;
+                phandle = <0x16>;
+            };
+        };
+        usb@1b400000 {
+            compatible = "generic-ehci";
+            reg = <0x1B400000 0x1FC>;
+            interrupt-parent = <0xF>;
+            interrupts = <0x2>;
+            resets = <0x5 0x5>;
+            reset-names = "usb-host";
+            has-transaction-translator;
+            caps-offset = <0x100>;
+            phy-names = "usb-phy1";
+            phys = <0x13>;
+            status = "okay";
+            #address-cells = <0x1>;
+            #size-cells = <0x0>;
+            port@1 {
+                reg = <0x1>;
+                #trigger-source-cells = <0x0>;
+                phandle = <0x15>;
+            };
+        };
+        nand@1b800200 {
+            compatible = "qca,ar934x-nand";
+            reg = <0x1B800200 0xB8>;
+            interrupts = <0x15>;
+            interrupt-parent = <0x2>;
+            resets = <0x4 0xE>;
+            reset-names = "nand";
+            nand-ecc-mode = "hw";
+            #address-cells = <0x1>;
+            #size-cells = <0x0>;
+            status = "disabled";
+        };
+        spi@1f000000 {
+            compatible = "qca,ar934x-spi";
+            reg = <0x1F000000 0x1C>;
+            clocks = <0x3 0x2>;
+            status = "okay";
+            #address-cells = <0x1>;
+            #size-cells = <0x0>;
+            flash@0 {
+                compatible = "jedec,spi-nor";
+                reg = <0x0>;
+                spi-max-frequency = <0x17D7840>;
+                #address-cells = <0x1>;
+                #size-cells = <0x1>;
+                partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <0x1>;
+                    #size-cells = <0x1>;
+                    partition@0 {
+                        label = "u-boot";
+                        reg = <0x0 0x40000>;
+                        read-only;
+                    };
+                    partition@40000 {
+                        label = "u-boot-env";
+                        reg = <0x40000 0x10000>;
+                    };
+                    partition@50000 {
+                        compatible = "denx,uimage";
+                        label = "firmware";
+                        reg = <0x50000 0xFA0000>;
+                    };
+                    partition@ff0000 {
+                        label = "art";
+                        reg = <0xFF0000 0x10000>;
+                        read-only;
+                        compatible = "nvmem-cells";
+                        #address-cells = <0x1>;
+                        #size-cells = <0x1>;
+                        macaddr@0 {
+                            reg = <0x0 0x6>;
+                            phandle = <0x8>;
+                        };
+                        macaddr@6 {
+                            reg = <0x6 0x6>;
+                            phandle = <0x17>;
+                        };
+                        calibration@1000 {
+                            reg = <0x1000 0x440>;
+                            phandle = <0xE>;
+                        };
+                        calibration@5000 {
+                            reg = <0x5000 0x844>;
+                            phandle = <0x11>;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    chosen {
+        bootargs = "console=ttyS0,115200n8";
+    };
+    cpus {
+        #address-cells = <0x1>;
+        #size-cells = <0x0>;
+        cpu@0 {
+            device_type = "cpu";
+            compatible = "mips,mips74Kc";
+            clocks = <0x3 0x0>;
+            reg = <0x0>;
+        };
+    };
+    ref {
+        compatible = "fixed-clock";
+        #clock-cells = <0x0>;
+        clock-output-names = "ref";
+        clock-frequency = <0x2625A00>;
+        phandle = <0x6>;
+    };
+    aliases {
+        led-boot = "/leds/status";
+        led-failsafe = "/leds/status";
+        led-running = "/leds/status";
+        led-upgrade = "/leds/status";
+        label-mac-device = "/ahb/eth@19000000";
+    };
+    leds {
+        compatible = "gpio-leds";
+        status {
+            label = "green:status";
+            gpios = <0x14 0x15 0x1>;
+            default-state = "on";
+        };
+        wlan2g {
+            label = "green:wlan2g";
+            gpios = <0x14 0x16 0x1>;
+            linux,default-trigger = "phy0tpt";
+        };
+        wlan5g {
+            label = "green:wlan5g";
+            gpios = <0x14 0x17 0x1>;
+            linux,default-trigger = "phy1tpt";
+        };
+    };
+    keys {
+        compatible = "gpio-keys";
+        reset {
+            label = "Reset button";
+            linux,code = <0x198>;
+            gpios = <0x14 0x10 0x1>;
+            debounce-interval = <0x3C>;
+        };
+    };
+};

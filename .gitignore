@@ -1,0 +1,9 @@
+# Binary files
+*.bin
+*.tar.gz
+*.iso
+*.raw
+
+# Python
+__pycache__/
+*.pyc
