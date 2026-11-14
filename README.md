@@ -143,6 +143,79 @@ In this customized release by **Anant Kushwaha**, this is **permanently solved o
 
 ---
 
+## 🛠️ Complete Source Code & Developer Guide
+
+This repository contains **100% of the source code, device tree sources, configuration patches, and build scripts** required to modify, re-tune, or rebuild this firmware from scratch.
+
+### 📁 Repository Structure
+```text
+openwrt-creatcomm-ta8h/
+├── dts/
+│   ├── qca9558_creatcomm_ta8h.dts      # Standard mainline OpenWrt Device Tree source
+│   ├── creatcomm_ta8h_generated.dts    # Standalone de-compiled DTS source
+│   └── creatcomm_ta8h_generated.dtb    # Pre-compiled binary Device Tree Blob
+├── patches/
+│   ├── openwrt-ath79-creatcomm-ta8h.patch # Upstream git patch for official OpenWrt source
+│   └── uci-defaults/
+│       └── 99-ta8h-defaults            # System boot initialization script (Wi-Fi, DNS, AP)
+├── scripts/
+│   ├── build_sysupgrade.py             # Re-assembles openwrt-sysupgrade-ta8h.bin
+│   ├── build_initramfs.py              # Re-assembles openwrt-initramfs-ta8h.bin
+│   └── rebuild_both_firmwares.py       # Full automated re-builder for both images
+├── images/
+│   └── creatcomm_ta8h_board.jpg        # High-resolution hardware board PCB photo
+├── LICENSE                             # MIT Open Source License
+└── README.md                           # Documentation & flashing guide
+```
+
+---
+
+### 🔧 How to Modify the Firmware
+
+#### 1. Modifying Hardware Bindings (GPIOs, LEDs, Switch)
+* Edit `dts/qca9558_creatcomm_ta8h.dts` or `dts/creatcomm_ta8h_generated.dts`.
+* Change switch pad clock delays, Ethernet PHY modes (`rgmii` / `sgmii`), LED GPIO pins, or partition offsets.
+* Recompile DTS to DTB using the standard device tree compiler (`dtc`):
+  ```bash
+  dtc -I dts -O dtb -o dts/creatcomm_ta8h_generated.dtb dts/creatcomm_ta8h_generated.dts
+  ```
+
+#### 2. Modifying Network, Wi-Fi & System Defaults
+* Edit `patches/uci-defaults/99-ta8h-defaults`.
+* Customize default SSIDs (`OpenWrt_5G`, `OpenWrt_2.4G`), default IP address, channel assignments, transmit powers, or upstream DNS servers (`8.8.8.8`, `1.1.1.1`).
+
+#### 3. Rebuilding the Firmware Binaries (Quick Assembly)
+Run the automated build script with Python 3:
+```bash
+python scripts/rebuild_both_firmwares.py
+```
+This script unpacks the SquashFS filesystem, applies the latest `uci-defaults`, repacks using `tar2sqfs`, compiles the kernel with the updated DTB, pads the partition boundaries, appends the verified `fwtool` metadata, and outputs:
+* `openwrt-sysupgrade-ta8h.bin`
+* `openwrt-initramfs-ta8h.bin`
+
+#### 4. Building Directly Inside Official OpenWrt Source Tree
+If you prefer compiling entirely from the official OpenWrt repository:
+1. Clone the OpenWrt source tree:
+   ```bash
+   git clone -b openwrt-23.05 https://github.com/openwrt/openwrt.git
+   cd openwrt
+   ./scripts/feeds update -a && ./scripts/feeds install -a
+   ```
+2. Copy the DTS file:
+   ```bash
+   cp <path-to-repo>/dts/qca9558_creatcomm_ta8h.dts target/linux/ath79/dts/
+   ```
+3. Apply the device patch:
+   ```bash
+   git apply <path-to-repo>/patches/openwrt-ath79-creatcomm-ta8h.patch
+   ```
+4. Select `Qualcomm Atheros ath79 -> Generic -> CreatComm TA8H` in `make menuconfig` and run:
+   ```bash
+   make target/linux/compile -j$(nproc)
+   ```
+
+---
+
 ## 👤 Author & Credits
 
 * **Firmware Customization, Optimization & Maintenance**: **Anant Kushwaha**
