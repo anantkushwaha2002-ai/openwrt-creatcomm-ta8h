@@ -96,9 +96,9 @@ This method boots OpenWrt purely inside the 128 MB DDR2 RAM without writing a si
    bootm 0x82000000
    ```
 7. **Accessing the RAM System**:
-   * The RAM temporary build is pre-configured with IP **`192.168.2.1`** (to prevent subnet conflicts with existing home routers).
-   * Set your PC to `192.168.2.10` (or obtain IP automatically via DHCP).
-   * Open your web browser at: **`http://192.168.2.1/`** (LuCI WebUI).
+   * Both the RAM temporary build and Sysupgrade use the unified standard OpenWrt IP: **`192.168.1.1`**.
+   * Set your PC to `192.168.1.10` (or obtain IP automatically via DHCP).
+   * Open your web browser at: **`http://192.168.1.1/`** (LuCI WebUI).
 8. **Permanent Flashing from RAM**:
    * In LuCI, go to **System -> Backup / Flash Firmware**.
    * Upload **`openwrt-sysupgrade-ta8h.bin`**.
@@ -126,25 +126,20 @@ If you already have SSH access to your original router on its existing IP (e.g. 
 
 ---
 
-## 🌐 Post-Installation IP Addresses & OPKG Configuration
+## 🌐 Network Configuration & Pre-Baked Zero-Touch OPKG
 
-### Default IP Addressing
-* **Temporary RAM Boot Build**: **`192.168.2.1`** (avoids subnet clash with upstream routers).
-* **Permanent Flash Build**: **`192.168.1.1`** (standard OpenWrt default IP).
+### Unified Default IP Addressing
+* **Default IP Address**: **`192.168.1.1`** (standardized across BOTH temporary RAM boot and permanent Sysupgrade images).
 * **Default Credentials**: Username `root`, No password by default.
+* **LuCI Web Interface**: Accessible immediately at `http://192.168.1.1`.
 
-### ⚠️ How to Avoid OPKG DNS Lookup Errors
-When configuring this board as an Access Point (Dumb AP) with a static IP (e.g. `192.168.10.11`):
-1. Navigate in LuCI to **Network -> Interfaces -> LAN -> Edit**.
-2. Set your static **IPv4 Address** (e.g. `192.168.10.11`) and **IPv4 Netmask** (`255.255.255.0`).
-3. **CRITICAL**: Set **IPv4 Gateway** to your main upstream router (e.g. `192.168.10.1`).
-4. **CRITICAL**: Add **Use custom DNS servers** (e.g. `8.8.8.8` and `192.168.10.1`).
-5. Save & Apply.
+### ✨ Pre-Baked DNS & Out-of-the-Box OPKG Support
+In standard OpenWrt, setting a static IP or using an Access Point setup often causes `opkg update` to fail with DNS lookup errors (`wget: bad address 'downloads.openwrt.org'`).
 
-> [!TIP]
-> If Gateway or DNS are omitted on a static LAN interface, running `opkg update` will fail with:  
-> `wget: bad address 'downloads.openwrt.org'`  
-> As long as Gateway and DNS are configured, `opkg update` and package downloads succeed 100%!
+In this customized release by **Anant Kushwaha**, this is **permanently solved out-of-the-box**:
+1. **Pre-baked Public DNS**: Both `8.8.8.8` (Google DNS) and `1.1.1.1` (Cloudflare DNS) are hardcoded directly into the system build defaults (`/etc/uci-defaults/99-ta8h-defaults`).
+2. **Rebind Protection Disabled**: `dnsmasq` rebind protection is pre-configured to `0` so upstream public DNS queries are never dropped.
+3. **Instant Package Updates**: As soon as your WAN/LAN interface is connected to the internet, simply running `opkg update` works 100% with no manual DNS or gateway setup needed!
 
 ---
 
