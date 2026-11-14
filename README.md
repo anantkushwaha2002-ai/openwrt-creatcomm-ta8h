@@ -30,7 +30,8 @@ This release cleanly transitions the board from the obsolete **`ar71xx`** target
 | **Wireless 2.4 GHz** | SoC internal `ath9k` **2x2 MIMO** 802.11b/g/n (up to 300 Mbps, 27 dBm) |
 | **Wireless 5 GHz** | PCIe `ath10k` QCA9880 / QCA9882 **2x2 MIMO** 802.11ac (up to 867 Mbps, 30 dBm) |
 | **Ethernet Ports** | 2x Gigabit Ethernet (1x LAN, 1x WAN with 48V PoE-In) |
-| **Power** | 12V DC Jack or 48V Active / Passive PoE |
+| **DC Power Jack** | **24V – 36V DC** (Center-Positive 5.5x2.1/2.5mm; 12V is NOT supported!) |
+| **PoE Power** | **48V Active (802.3af/at) or 48V Passive PoE** on WAN Port |
 
 </td>
 <td width="45%" align="center" valign="middle">
@@ -42,6 +43,38 @@ This release cleanly transitions the board from the obsolete **`ar71xx`** target
 </td>
 </tr>
 </table>
+
+> [!WARNING]
+> **DC Power Jack Voltage Requirement (24V – 36V DC):**  
+> This industrial outdoor board employs an onboard step-down DC-DC switching regulator designed for long-distance cable runs.  
+> • **Standard 12V DC power adapters WILL NOT WORK** — the board will fail to power on or enter an endless boot loop because 12V does not meet the step-down regulator's input threshold.  
+> • **Required DC Jack Voltage**: **24V to 36V DC** (nominal 24V or 36V center-positive, up to 48V).  
+> • **PoE Supply**: Standard **48V PoE (802.3af/at)** or **48V Passive PoE** injector connected to the **WAN** Ethernet port.
+
+---
+
+### 🔌 Hardware Pinouts & Interfaces
+
+| Interface | Physical Location / Mapping | Operating Parameters |
+| :--- | :--- | :--- |
+| **Serial Console (UART)** | Header `J2` (2x5 pin header) | **115200 Baud, 8N1, 3.3V TTL**. Pinout: `GND`, `TX`, `RX`, `VCC` (*Note: Leave 3.3V VCC disconnected!*). TTY Device: `ttyS0`. |
+| **Factory Reset Button** | Tactile Switch on PCB Edge | **GPIO 16** (Active LOW, 60ms debounce). Hold at boot for failsafe. |
+| **Status LED** | Onboard Surface Mount LED | **GPIO 21** (Active LOW, default ON). |
+| **2.4 GHz WLAN LED** | Onboard Surface Mount LED | **GPIO 22** (Active LOW, default trigger: `phy1tpt`). |
+| **5 GHz WLAN LED** | Onboard Surface Mount LED | **GPIO 23** (Active LOW, default trigger: `phy0tpt`). |
+| **Ethernet WAN Port** | RJ45 Port (Left/PoE In) | AR8337 Switch **Port 2**, attached via `eth0` (RGMII). Supports 48V PoE. |
+| **Ethernet LAN Port** | RJ45 Port (Right) | AR8337 Switch **Port 3**, attached via `eth0` (RGMII). Standard Gigabit LAN. |
+
+---
+
+### 💾 SPI-NOR Flash Memory Layout (16 MB Winbond W25Q128)
+
+| Partition Name | Start Offset | End Offset | Partition Size | Read/Write | Function & Safety Instructions |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`u-boot`** | `0x00000000` | `0x00040000` | 256 KB | Read-Only | Primary U-Boot bootloader (Qualcomm Atheros 115200 baud). |
+| **`u-boot-env`** | `0x00040000` | `0x00050000` | 64 KB | Read/Write | Bootloader environment variables (`bootcmd`, `serverip`, etc.). |
+| **`firmware`** | `0x00050000` | `0x00ff0000` | 15.625 MB (16,000 KB) | Read/Write | OpenWrt Linux kernel (`uImage`) + SquashFS root filesystem + JFFS2 writable overlay. |
+| **`art`** | `0x00ff0000` | `0x01000000` | 64 KB | Read-Only | **Atheros Radio Test (ART)**. Holds factory RF calibration offsets & MAC addresses. **NEVER OVERWRITE!** |
 
 ---
 
@@ -95,6 +128,11 @@ This method boots OpenWrt purely inside the 128 MB DDR2 RAM without writing a si
    tftpboot 0x82000000 openwrt-initramfs-ta8h.bin
    bootm 0x82000000
    ```
+
+   > [!NOTE]
+   > **Why `0x82000000` Must Be Used (Technical Rationale):**  
+   > The Linux kernel uImage header specifies decompression target `ih_load = 0x80060000` and entry point `ih_ep = 0x80060000`. If you download the TFTP image directly to `0x80060000` (or `0x80000000`), U-Boot's `bootm` LZMA decompressor will write uncompressed data into `0x80060000` while simultaneously reading from it, overwriting its own compressed source bytes and failing with a crash or *LZMA ERROR 1 / Bad Magic*.  
+   > Loading the image at high RAM offset **`0x82000000`** (32 MB into the 128 MB DDR2 RAM) completely separates the source archive from the decompression buffer at `0x80060000`, guaranteeing a 100% clean boot.
 7. **Accessing the RAM System**:
    * Both the RAM temporary build and Sysupgrade use the unified standard OpenWrt IP: **`192.168.1.1`**.
    * Set your PC to `192.168.1.10` (or obtain IP automatically via DHCP).
@@ -213,6 +251,59 @@ If you prefer compiling entirely from the official OpenWrt repository:
    ```bash
    make target/linux/compile -j$(nproc)
    ```
+
+---
+
+## 🤖 AI Agent & LLM Developer Specification Block
+
+> [!NOTE]
+> If you are an autonomous AI coding agent (e.g. Claude, ChatGPT, Cursor, Gemini, Copilot, or Antigravity) tasked with modifying, optimizing, or building custom images for this router, use the following authoritative hardware & build specifications:
+
+```yaml
+target_hardware:
+  board_model: "CreatComm Technology TA8H"
+  openwrt_target: "ath79/generic"
+  dts_compatible: ["creatcomm,ta8h", "qca,qca9558"]
+  soc: "Qualcomm Atheros QCA9558 ver 1 rev 0 @ 720 MHz"
+  cpu_architecture: "MIPS 74Kc (mips_24kc, 32-bit Big-Endian)"
+  ram: "128 MB DDR2 (Winbond, 600 MHz)"
+  flash: "16 MB SPI-NOR (Winbond W25Q128, 50MHz)"
+  switch:
+    model: "Qualcomm Atheros AR8337 Rev 2"
+    rgmii_pad0: "0x03000101 (attached to CPU eth0)"
+    sgmii_pad6: "0x4a000000 (attached to CPU eth1)"
+    port_mapping:
+      port_0: "CPU eth0 (RGMII)"
+      port_2: "WAN / 48V PoE In (switch0.1)"
+      port_3: "LAN (switch0.1)"
+      port_6: "CPU eth1 (SGMII)"
+  wireless:
+    wlan_2g:
+      chip: "SoC internal ath9k"
+      mimo: "2x2 MIMO 802.11b/g/n (up to 300 Mbps)"
+      cal_data: "art partition offset 0x1000 (length: 0x440)"
+      mac_addr: "art partition offset 0x0000 (length: 0x6)"
+    wlan_5g:
+      chip: "PCIe Mini-Card ath10k (QCA9880 / QCA9882)"
+      mimo: "2x2 MIMO 802.11ac (up to 867 Mbps)"
+      cal_data: "art partition offset 0x5000 (length: 0x844)"
+      mac_addr: "art partition offset 0x0006 (length: 0x6)"
+  power_requirements:
+    dc_barrel_jack: "24V - 36V DC (Center-Positive, wide input up to 48V; 12V strictly unsupported!)"
+    poe_in: "48V Active (802.3af/at) or 48V Passive PoE on WAN port"
+  gpio_mappings:
+    reset_button: "GPIO 16 (Active LOW)"
+    status_led: "GPIO 21 (Active LOW)"
+    wlan2g_led: "GPIO 22 (Active LOW, phy1tpt)"
+    wlan5g_led: "GPIO 23 (Active LOW, phy0tpt)"
+  uart_serial:
+    header: "J2 (2x5 pin header)"
+    parameters: "115200 baud, 8 data bits, no parity, 1 stop bit (8N1), 3.3V TTL"
+    device: "ttyS0"
+  u_boot_parameters:
+    decompression_target: "0x80060000 (kernel ih_load / ih_ep)"
+    tftp_safe_load_addr: "0x82000000 (prevents memory collision during LZMA decompress)"
+```
 
 ---
 
